@@ -1,6 +1,9 @@
 """
-In this second pass at the election_results.py script, we chop up the code into
-functions and add a few tests.
+A monstrosity of an election results script. Calculates total votes for
+races and candidates, and determines if there is a winner in each race.
+
+This module bundles together way too much functionality and is near impossible 
+to test, beyond eye-balling results.
 
 USAGE:
 
@@ -19,31 +22,33 @@ from os.path import dirname, join
 
 
 def main():
-    # Download CSV of fake Virginia election results to root of project
+    """
+
+    Returns:
+
+    """
     path = join(dirname(dirname(__file__)), 'fake_va_elec_results.csv')
-    download_results(path)
-    # Process data
-    results = parse_and_clean(path)
-    summary = summarize(results)
+    download_csv(path)
+    results = parse_clean_data(path)
+    summary = calculate_summary(results)
     write_csv(summary)
 
 
-#### PRIMARY FUNCS ####
-### These funcs perform the major steps of our application ###
+def download_csv(path):
+    """
+    Download CSV of fake Virginia election results to root of project
 
-def download_results(path):
-    """Download CSV of fake Virginia election results from GDocs"""
+    Returns:
+
+    """
     url = "https://docs.google.com/spreadsheet/pub?key=0AhhC0IWaObRqdGFkUW1kUmp2ZlZjUjdTYV9lNFJ5RHc&output=csv"
     urllib.request.urlretrieve(url, path)
 
-def parse_and_clean(path):
-    """Parse downloaded results file and perform various data clean-ups
 
+def parse_clean_data(path):
+    """
 
-    RETURNS:
-
-        Nested dictionary keyed by race, then candidate.
-        Candidate value is an array of dicts containing county level results.
+    Returns:
 
     """
     # Create reader for ingesting CSV as array of dicts
@@ -60,9 +65,9 @@ def parse_and_clean(path):
         # Convert total votes to an integer
         row['votes'] = int(row['votes'])
 
-        # Store county-level results by slugified office and district (if there is one), 
+        # Store county-level results by slugified office and district (if there is one),
         # then by candidate party and raw name
-        race_key = row['office'] 
+        race_key = row['office']
         if row['district']:
             race_key += "-%s" % row['district']
         # Create unique candidate key from party and name, in case multiple candidates have same
@@ -74,14 +79,13 @@ def parse_and_clean(path):
     return results
 
 
-def summarize(results):
-    """Tally votes for Races and candidates and assign winner flag.
+def calculate_summary(results):
+    """
 
-    RETURNS:
-
-        Dictionary of results
+    Returns:
 
     """
+    # Tally votes for Races and candidates and assign winners
     summary = defaultdict(dict)
 
     for race_key, cand_results in results.items():
@@ -117,10 +121,10 @@ def summarize(results):
         result = list(cand_results.values())[0][0]
         # Add results to output
         summary[race_key] = {
-            'all_votes': all_votes,
             'date': result['date'],
             'office': result['office'],
             'district': result['district'],
+            'all_votes': all_votes,
             'candidates': sorted_cands,
         }
 
@@ -128,15 +132,16 @@ def summarize(results):
 
 
 def write_csv(summary):
-    """Generates CSV from summary election results data
+    """
 
-    CSV is written to 'summary_results.csv' file, inside same directory
-    as this module.
+    Returns:
 
     """
-    outfile = join(dirname((__file__)), 'summary_results.csv')
+    # Write CSV of results
+    outfile = join(dirname(__file__), 'summary_results.csv')
+
     with open(outfile, 'wt') as fh:
-        # Limit output to cleanly parsed, standardized values
+        # We'll limit the output to cleanly parsed, standardized values
         fieldnames = [
             'date',
             'office',
@@ -157,8 +162,11 @@ def write_csv(summary):
                 writer.writerow(results)
 
 
-# Q: What on earth is this __name__ == __main__ thing?
-# A: Syntax that lets you execute a module as a script.
-# http://docs.python.org/2/tutorial/modules.html#executing-modules-as-scripts
 if __name__ == '__main__':
     main()
+
+
+
+
+
+

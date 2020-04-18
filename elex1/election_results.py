@@ -15,19 +15,18 @@ OUTPUT:
 
 """
 import csv
-import urllib
+import urllib.request
 from operator import itemgetter
 from collections import defaultdict
 from os.path import dirname, join
 
-
 # Download CSV of fake Virginia election results to root of project
 url = "https://docs.google.com/spreadsheet/pub?key=0AhhC0IWaObRqdGFkUW1kUmp2ZlZjUjdTYV9lNFJ5RHc&output=csv"
 filename = join(dirname(dirname(__file__)), 'fake_va_elec_results.csv')
-urllib.urlretrieve(url, filename)
+urllib.request.urlretrieve(url, filename)
 
 # Create reader for ingesting CSV as array of dicts
-reader = csv.DictReader(open(filename, 'rb'))
+reader = csv.DictReader(open(filename, 'rt', encoding='utf8'))
 
 # Use defaultdict to automatically create non-existent keys with an empty dictionary as the default value.
 # See https://pydocs2cn.readthedocs.org/en/latest/library/collections.html#defaultdict-objects
@@ -85,7 +84,7 @@ for race_key, cand_results in results.items():
         first['winner'] = 'X'
 
     # Get race metadata from one set of results
-    result = cand_results.values()[0][0]
+    result = list(cand_results.values())[0][0]
     # Add results to output
     summary[race_key] = {
         'date': result['date'],
@@ -98,7 +97,7 @@ for race_key, cand_results in results.items():
 
 # Write CSV of results
 outfile = join(dirname(__file__), 'summary_results.csv')
-with open(outfile, 'wb') as fh:
+with open(outfile, 'wt') as fh:
     # We'll limit the output to cleanly parsed, standardized values
     fieldnames = [
         'date',
@@ -119,3 +118,5 @@ with open(outfile, 'wb') as fh:
             results.update(cand)
             writer.writerow(results)
 
+
+# print(summary)
